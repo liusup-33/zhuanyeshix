@@ -1,0 +1,37 @@
+
+package io.gzist.modules.app.service.impl;
+
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.gzist.common.exception.RRException;
+import io.gzist.common.validator.Assert;
+import io.gzist.modules.app.dao.UserDao;
+import io.gzist.modules.app.entity.UserEntity;
+import io.gzist.modules.app.form.LoginForm;
+import io.gzist.modules.app.service.UserService;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.stereotype.Service;
+
+
+@Service("userService")
+public class UserServiceImpl extends ServiceImpl<UserDao, UserEntity> implements UserService {
+
+	@Override
+	public UserEntity queryByMobile(String mobile) {
+		return baseMapper.selectOne(new QueryWrapper<UserEntity>().eq("mobile", mobile));
+	}
+
+	@Override
+	public long login(LoginForm form) {
+		UserEntity user = queryByMobile(form.getMobile());
+		Assert.isNull(user, "手机号或密码错误");
+
+		//密码错误
+		if(!user.getPassword().equals(DigestUtils.sha256Hex(form.getPassword()))){
+			throw new RRException("手机号或密码错误");
+		}
+
+		return user.getUserId();
+	}
+}
